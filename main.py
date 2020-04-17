@@ -5,8 +5,10 @@ import os.path
 import time
 import PIL
 from PIL import Image
+import PIL.ExifTags
 
-from replies import replies
+from texts import replies, additionalText
+from utils import buildSuccessfulMessage, containesAnyNeededTag
 
 with open('config.json', 'r') as f:
     config = json.load(f)
@@ -22,7 +24,7 @@ def getLanguage(message):
 	lang = 'en'
 	if message.from_user.language_code == 'ru':
 		lang = 'ru'
-	# this wierd way to define language is needed because value of message.from_user.language_code can be None or smth like 'en_GS' 'en_US' etc.
+	# this weird way to define language is needed because value of message.from_user.language_code can be smth like 'en_GS' 'en_US' or even None.
 	return lang
 
 def getUsername(message):
@@ -33,28 +35,33 @@ def getUsername(message):
 		author = 'id_{}'.format(message.from_user.id)
 	return author
 
-def sendTextMessage(message, text):
-	bot.send_message(message.chat.id, text, parse_mode="HTML")
+def sendTextMessage(message, text, is_reply=True):
+	if is_reply:
+		bot.reply_to(message, text, parse_mode="HTML", disable_web_page_preview=True)
+	else:
+		bot.send_message(message.chat.id, text, parse_mode="HTML", disable_web_page_preview=True)
 
 def handleWelcomeMessage(message):
-	sendTextMessage(message, replies['welcome'][getLanguage(message)])
+	sendTextMessage(message, replies['welcome'][getLanguage(message)], False)
 
 def replyToPhoto(message):
 	sendTextMessage(message, replies['photoIsNotSentLikeFile'][getLanguage(message)])
 
 def checkDocument(message):
+	execution_timer_start = time.time()
 	file_info = bot.get_file(message.document.file_id)
 	file_extension = os.path.splitext(file_info.file_path)[1]
 	isExtensionValid = file_info.file_path.lower().endswith(('.heic', '.jpg', '.jpeg'))
+	lang = getLanguage(message)
 	if not isExtensionValid:
-		sendTextMessage(message, replies['wrongFileExtention'][getLanguage(message)])
+		sendTextMessage(message, replies['wrongFileExtention'][lang])
 		return
 
 	author = getUsername(message)
 
 	download_start_time = time.time()
 	file = bot.download_file(file_info.file_path)
-	print('downloaded in: {} sec'.format(round(time.time() - download_start_time, 5)))
+	print('{} kb downloaded in: {} sec'.format(round(file_info.file_size / 1024, 2), round(time.time() - download_start_time, 5)))
 
 	dirPath = "images/{}".format(author)
 	newFileName = "image_{}{}".format(message.date, file_extension)
@@ -70,11 +77,25 @@ def checkDocument(message):
 	img = PIL.Image.open('{}\\{}'.format(THIS_FOLDER, newFileName))
 	exif_data = img._getexif()
 
-    if not bool(exif_data):
-        sendTextMessage(message, replies['noExif'][getLanguage(message)])
-        return
+	if not bool(exif_data):
+		sendTextMessage(message, replies['noExif'][lang])
+		return
 
-	print(exif_data) # Got it!
+	exif = {
+		PIL.ExifTags.TAGS[k]: v
+		for k, v in img._getexif().items()
+		if k in PIL.ExifTags.TAGS
+	}
+
+	if not containesAnyNeededTag(exif):
+		sendTextMessage(message, replies['uselessExif'][lang])
+		return
+
+	file_data = {'ext': file_extension, 'size': round(file_info.file_size / 1024, 2)}
+
+	execution_time = round(time.time() - execution_timer_start, 5)
+	sendTextMessage(message, buildSuccessfulMessage(exif, file_data, execution_time, lang))
+
 
 @bot.message_handler(commands=['start'])
 def send_welcome(message):
