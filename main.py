@@ -1,6 +1,6 @@
 import json
 import telebot
-from telebot import apihelper
+# from telebot import apihelper
 import os.path
 import time
 import PIL
@@ -16,7 +16,7 @@ with open('config.json', 'r') as f:
 TG_API_TOKEN = config['TG_API_TOKEN']
 proxy = config['proxy']
 
-apihelper.proxy = {'https':'socks5://{}:{}@{}:{}'.format(proxy['user'], proxy['password'], proxy['ip'], proxy['port'])}
+# apihelper.proxy = {'https':'socks5://{}:{}@{}:{}'.format(proxy['user'], proxy['password'], proxy['ip'], proxy['port'])}
 
 bot = telebot.TeleBot(TG_API_TOKEN)
 
@@ -103,6 +103,7 @@ def send_welcome(message):
 
 @bot.message_handler(content_types=['text', 'audio', 'document', 'photo', 'sticker', 'video', 'video_note', 'voice', 'location', 'contact', 'new_chat_members', 'left_chat_member', 'new_chat_title', 'new_chat_photo', 'delete_chat_photo', 'group_chat_created', 'supergroup_chat_created', 'channel_chat_created', 'migrate_to_chat_id', 'migrate_from_chat_id', 'pinned_message'])
 def echo_all(message):
+	print(message.from_user)
 	content_type = message.content_type
 	if content_type == 'photo':
 		replyToPhoto(message)
