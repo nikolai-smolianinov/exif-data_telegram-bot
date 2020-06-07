@@ -14,7 +14,7 @@ with open('/home/butcher7474/exif-data_telegram-bot/config.json', 'r') as f:
     config = json.load(f)
 
 TG_API_TOKEN = config['TG_API_TOKEN']
-proxy = config['proxy']
+# proxy = config['proxy']
 
 # apihelper.proxy = {'https':'socks5://{}:{}@{}:{}'.format(proxy['user'], proxy['password'], proxy['ip'], proxy['port'])}
 
