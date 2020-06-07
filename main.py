@@ -10,7 +10,7 @@ import PIL.ExifTags
 from texts import replies, additionalText
 from utils import buildSuccessfulMessage, containesAnyNeededTag
 
-with open('config.json', 'r') as f:
+with open('/bots/exif/config.json', 'r') as f:
     config = json.load(f)
 
 TG_API_TOKEN = config['TG_API_TOKEN']
