@@ -113,8 +113,5 @@ def echo_all(message):
 		return
 	sendTextMessage(message, replies['noPhoto'][getLanguage(message)])
 
-try:
-	bot.polling()
 
-except:
-	pass
+bot.polling()
